@@ -1,0 +1,68 @@
+
+# @dp.message_handler(commands=['start'])
+async def process_start_command(message: types.Message):
+    await message.reply("Бот по проверке авто по VIN номеру, приветствует вас!", reply_markup=keyboard1)
+
+# @dp.message_handler(commands=['help'])
+async def process_help_command(message: types.Message):
+    await message.reply(fmt.text(
+            fmt.text("Cервис, предоставляющий полный и правдивый отчет по истории владения и эксплуатации автомобилей, \
+                    зарегистрированных на территории РФ."),
+            fmt.text("Проверка осуществляется по VIN, номеру шасси или государственному регистрационному знаку (номеру)."),
+            fmt.text("Для получения информации об автомобиле:"),
+            fmt.text("  - нажмите на кнопку «Проверить автомобиль»"),
+            fmt.text("  - отправьте боту сообщение с номером автомобиля"),
+            fmt.text("  -ответным сообщением вы получите отчет об автомобиле"),
+            sep="\n"
+        ), parse_mode="HTML"
+    )
+
+
+# @dp.message_handler(lambda message: message.text == "Проверить автомобиль")
+async def check_auto(message: types.Message):
+    await message.reply("Выберите, что бы вы хотели проверить:",reply_markup=keyboard2)
+
+# @dp.message_handler(lambda message: message.text == "Проверить по ClinliBase")
+async def clinli_base(message: types.Message):
+    global flag
+    flag = "clinli"
+    await message.reply("Введите VIN код в формате FALP62W4WH1287053 или гос.номер в формате: А001МР77")
+
+# @dp.message_handler(lambda message: message.text == "Проверить по всем базам данных")
+async def all_base(message: types.Message):
+    global flag
+    flag = "all"
+    await message.reply("Введите VIN код в формате FALP62W4WH1287035 или гос.номер в формате: А001МР77")
+
+# @dp.message_handler(lambda message: message.text == "На главную")
+async def main_menu(message: types.Message):
+    await message.reply("Бот по проверке авто по VIN номеру, приветствует вас!", reply_markup=keyboard1)
+
+# @dp.message_handler(lambda message: message.text == "Справка")
+async def reference(message: types.Message):
+    await message.reply(ref, reply_markup=keyboard2)
+
+
+
+# @dp.message_handler(content_types=['text'])
+async def get_text_messages(msg: types.Message):
+       message = msg.text
+       message = message.upper()
+       if re.fullmatch("[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}",message):
+            # конвертация госномера в вин
+            vin = message
+       elif re.fullmatch("(?=.*\d|=.*[A-Z])(?=.*[A-Z])[A-Z0-9]{17}",message):
+            vin = message
+       else:
+           await msg.answer("Извините, ваше сообщение не распознано",reply_markup=keyboard2)
+           return True
+
+       if flag=="clinli":
+               # запрос к бд
+               await msg.answer(f"Отчет ClinliBase по номеру: {vin}")
+       elif  flag=="all":
+               # запрос к бд
+               await msg.answer(f"Отчет всех баз по номеру: {vin}")
+       else:
+               await msg.answer("Выберите, что бы вы хотели проверить:", reply_markup=keyboard2)
+
